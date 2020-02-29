@@ -1,0 +1,74 @@
+---
+title: "Assignment 1"
+author: "Rithin"
+date: "2/29/2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(ISLR)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+
+SafeBabies <- Carseats %>% select("Sales", "Price", "ShelveLoc")
+head(SafeBabies)
+
+good<-SafeBabies%>%filter(ShelveLoc=="Good")
+head(good)
+
+medium<-SafeBabies%>%filter(ShelveLoc=="Medium")
+head(medium)
+
+bad<-SafeBabies%>%filter(ShelveLoc=="Bad")
+head(bad)
+```
+## model building ##
+```{r}
+## We are building linear model instead of building the genrelized linear model because it makes no sense to build a genralized linear model on a single variable
+
+modelgood<-lm(Sales~Price,data=good)
+summary(modelgood)
+
+modelbad<-lm(Sales~Price,data=bad)
+summary(modelbad)
+```
+## optimal cost for shelve location good ##
+```{r}
+Productioncost<-55
+paste("The optimal cost for shelve location good", ((-modelgood$coefficients[[2]] *Productioncost) + (modelgood$coefficients[[1]]))/(-2 * modelgood$coefficients[[2]]))
+```
+## optimal cost for shelve location bad ##
+```{r}
+paste("The optimal cost for shelve location bad", ((-modelbad$coefficients[[2]] *Productioncost) + (modelbad$coefficients[[1]]))/(-2 * modelbad$coefficients[[2]]))
+
+```
+## plotting optimal cost for varying production costs ##
+```{r}
+productioncost1<-data.frame(prodncost=seq(40,85,by=1),optimalprice=rep(0,46))
+for (i in 1:nrow(productioncost1)) {
+  productioncost1$optimalprice[i]<- ((-modelgood$coefficients[[2]] *productioncost1$prodncost[i]) + (modelgood$coefficients[[1]]))/(-2 * modelgood$coefficients[[2]])
+}
+
+productioncost2 <- c(40:85)
+rr <- 0
+for (i in 1:length(productioncost2)) {
+   rr[i] <- ((-modelbad$coefficients[[2]] *productioncost2[i]) + (modelbad$coefficients[[1]]))/(-2 * modelbad$coefficients[[2]])
+}
+productioncost2<-data.frame(prodncost=seq(40,85,by=1),optimalprice=rr)
+data<-cbind(productioncost1,productioncost2$optimalprice)
+names(data)<-c("productioncost","good","bad")
+data1<- data %>% gather("category","optimalprice",-productioncost)
+
+ggplot(data1,aes(x=productioncost,y=optimalprice,color=category))+
+  geom_point()+theme_classic()+ labs(x="Production Cost",y="Optimal Price",color="Shelve Location") + 
+  ggtitle("Optimal Prices for Shelve Location")+
+  theme(legend.position = "top",legend.justification = "left",legend.title = element_blank()) + scale_color_manual(values=c("red1","royalblue"))
+```
+
+```{r}
+## We can observe from the above plot that if the Shelve location is good the optimal price for the product is greater than the products placed at shleve location bad, That makes sense!!!
+```
